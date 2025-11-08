@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Planner Pro — Calculator (Onboarding style) + Planner + Calendar</title>
+<style>
+  :root{--bg:#0b0f1d;--panel:#0f1430;--card:#111736;--line:#202752;--fg:#e9ecff;--muted:#a0a8c7;--accent:#8b5cf6;--good:#22c55e;--warn:#eab308;--bad:#ef4444;}
+  *{box-sizing:border-box} body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:#0b0f1d;color:var(--fg)}
+  .wrap{max-width:1200px;margin:26px auto;padding:0 16px}
+  .topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}
+  .brand{display:flex;align-items:center;gap:10px}
+  .logo{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--accent),#4f46e5)}
+  .nav{display:flex;gap:6px;flex-wrap:wrap}
+  .tab{padding:10px 14px;border:1px solid var(--line);border-radius:999px;background:#10162f;cursor:pointer}
+  .tab.active{border-color:transparent;background:linear-gradient(90deg,var(--accent),#4f46e5)}
+  .card{background:linear-gradient(180deg,#111736,#0f1430);border:1px solid #1a2350;border-radius:18px;box-shadow:0 18px 44px rgba(0,0,0,.35);padding:24px}
+  .muted{color:var(--muted)}
+  label{font-size:14px;color:#c7cff3;display:block;margin-bottom:6px}
+  input,select{width:100%; padding:12px 13px; border-radius:12px; border:1px solid #1a2044; background:#0c1026; color:#fff; font-size:15px; outline:none}
+  .grid{display:grid; gap:14px} .g2{grid-template-columns:1fr 1fr}
+  .row{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+  .btn{cursor:pointer;border:1px solid #1a2044;background:#12183a;color:#fff;border-radius:12px;padding:11px 16px;font-weight:700}
+  .btn.primary{background:linear-gradient(90deg,#8b5cf6,#4f46e5);border-color:transparent}
+  .btn.success{background:linear-gradient(90deg,#22c55e,#84cc16);border-color:transparent;color:#052e16}
+  .progress{height:8px;border-radius:999px;background:#0d1230;overflow:hidden;border:1px solid #1a2146}
+  .progress > div{height:100%; width:0; background:linear-gradient(90deg,#8b5cf6,#22c55e)}
+  .titlebar{font-size:14px; color:#c7cff3}
+  .note{font-size:12px; color:#8d95b6; text-align:center; margin-top:8px}
+
+  /* Planner header tags */
+  .tag{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(180deg,#1f1b66,#19143f);border:1px solid #2a256f;padding:8px 12px;border-radius:12px;font-weight:800;letter-spacing:.2px}
+
+  .targetBar{height:10px;border-radius:999px;background:#0e1230;overflow:hidden;box-shadow:inset 0 0 0 1px #1a2146}
+  .targetFill{height:100%;width:0;background:linear-gradient(90deg,#22c55e,#84cc16)}
+  table{width:100%;border-collapse:collapse} th,td{border-bottom:1px solid #1a2146;padding:10px;text-align:left;font-size:14px}
+  .combo{position:relative} .combo input{font-size:16px;padding:12px 14px}
+  .combo .list{position:absolute;z-index:10;left:0;right:0;max-height:260px;overflow:auto;margin-top:8px;background:#0b0f22;border:1px solid #2a3160;border-radius:12px;box-shadow:0 20px 50px rgba(0,0,0,.45)}
+  .combo .item{padding:12px;border-radius:10px;display:flex;justify-content:space-between;gap:8px;cursor:pointer;font-size:16px;color:#e5e7ff}
+  .combo .item small{color:#a3aed0;font-size:13px}
+  .combo .item.active, .combo .item:hover{background:#11183a}
+  .hl{color:#fff;background:linear-gradient(transparent 60%, #4338ca55 60%)}
+
+  /* Ring */
+  .ringWrap{position:relative;width:160px;height:160px;margin-bottom:18px} /* extra space under the ring */
+  .ringWrap svg{filter:drop-shadow(0 6px 20px rgba(0,0,0,.4))}
+  .ringTxt{position:absolute;inset:0;display:grid;place-items:center;font-weight:800;text-align:center}
+  .ringTxt div{font-size:13px;color:#c7d2fe}
+  .ringTxt strong{font-size:24px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand"><div class="logo"></div><div><strong>Planner Pro</strong><div class="muted" style="font-size:12px">Calculator + Planner + Calendar</div></div></div>
+    <div class="nav">
+      <div class="tab active" data-tab="calculator">Calculator</div>
+      <div class="tab" data-tab="planner">Weekly Plan</div>
+      <div class="tab" data-tab="calendar">Calendar</div>
+      <div class="tab" data-tab="library">Food Library</div>
+    </div>
+  </div>
+
+  <!-- CALCULATOR (unchanged onboarding style) -->
+  <div id="tab-calculator" class="sect">
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div class="titlebar">Step <span id="stepNow">1</span> of 6</div>
+        <div class="progress" style="width:60%"><div id="stepBar"></div></div>
+        <div class="row">
+          <label style="margin:0" for="units">Units</label>
+          <select id="units"><option value="metric" selected>kg / cm</option><option value="imperial">lb / in</option></select>
+        </div>
+      </div>
+      <h1 id="calcTitle" style="margin:0 0 8px 0;font-size:32px">How old are you?</h1>
+      <div class="muted" id="calcDesc">We tailor recommendations to your life stage.</div>
+      <div id="calcForm" class="grid g2" style="margin-top:16px"></div>
+      <div class="row" style="justify-content:space-between; margin-top:18px">
+        <button id="calcBack" class="btn">← Back</button>
+        <div class="row">
+          <button id="calcNext" class="btn primary">Next →</button>
+          <button id="calcSave" class="btn success" style="display:none">Save as my target</button>
+        </div>
+      </div>
+      <div class="note">* Educational estimates only. Not medical advice.</div>
+    </div>
+  </div>
+
+  <!-- PLANNER (no 'Week starts', extra spacing) -->
+  <div id="tab-planner" class="sect" style="display:none">
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <div>
+          <h2 style="margin:0">Weekly Plan</h2>
+          <div class="muted" id="targetTxt2">Target: —</div>
+        </div>
+        <div class="row">
+          <label for="selDay" style="margin:0">Day</label>
+          <select id="selDay">
+            <option value="0">Mon</option><option value="1">Tue</option><option value="2">Wed</option>
+            <option value="3">Thu</option><option value="4">Fri</option><option value="5">Sat</option><option value="6">Sun</option>
+          </select>
+          <input type="date" id="logDate"/>
+          <button id="logDay" class="btn success">Log to calendar</button>
+        </div>
+      </div>
+
+      <div class="row" style="gap:18px; align-items:center; margin-top:16px; margin-bottom:12px">
+        <div class="ringWrap" id="ringDay"></div>
+        <div class="muted" id="dayMeta">—</div>
+      </div>
+
+      <div id="plannerBody" class="sect"></div>
+    </div>
+  </div>
+
+  <!-- CALENDAR -->
+  <div id="tab-calendar" class="sect" style="display:none">
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <div class="row">
+          <button class="btn" id="prevMonth">‹</button>
+          <div id="monthLabel" style="font-weight:800"></div>
+          <button class="btn" id="nextMonth">›</button>
+        </div>
+        <div class="muted" id="monthSummary">—</div>
+      </div>
+      <div class="calGrid" id="calGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px"></div>
+      <div class="sect">
+        <span class="tag" style="background:#052e16;border-color:#14532d;color:#86efac">within (±5%)</span>
+        <span class="tag" style="background:#052e2b;border-color:#134e4a;color:#99f6e4">under</span>
+        <span class="tag" style="background:#3b0a0a;border-color:#7f1d1d;color:#fecaca">over</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- LIBRARY -->
+  <div id="tab-library" class="sect" style="display:none">
+    <div class="card"><h2 style="margin:0">Food Library</h2><div id="libTableWrap" class="sect"></div></div>
+  </div>
+</div>
+
+<script>
+const storage={ get:k=>{try{return localStorage.getItem(k);}catch{return null;}}, set:(k,v)=>{try{localStorage.setItem(k,v);}catch{}}, remove:k=>{try{localStorage.removeItem(k);}catch{}} };
+function round(n,d=0){ const p=10**d; return Math.round(n*p)/p; }
+
+// ---- Calculator
+const calcState={age:25,sex:'male',height:175,weight:70,units:'metric',activity:'light',goal:'lose',pace:0.5};
+const steps=[
+  {t:'How old are you?',d:'We tailor recommendations to your life stage.',fields:[{k:'age',label:'Age',type:'number'},{k:'sex',label:'Sex',type:'select',opts:[['male','Male'],['female','Female']]}]},
+  {t:'Your height & weight',d:'Units can be changed anytime.',fields:[{k:'height',label:'Height (cm)',type:'number'},{k:'weight',label:'Weight (kg)',type:'number'}]},
+  {t:'Activity level',d:'Pick the one that matches most days.',fields:[{k:'activity',label:'Activity',type:'select',opts:[['sedentary','Sedentary'],['light','Lightly active'],['moderate','Moderately active'],['very','Very active'],['extra','Extra active']]}]},
+  {t:'Your goal',d:'We will set calories & macros around it.',fields:[{k:'goal',label:'Goal',type:'select',opts:[['lose','Lose weight'],['maintain','Maintain'],['gain','Gain muscle']]},{k:'pace',label:'Pace (kg/week)',type:'range',min:0.1,max:1,step:0.05,show:s=>s.goal!=='maintain'}]},
+  {t:'Review',d:'Check your details.',fields:[{k:'summary',type:'summary'}]},
+  {t:'Done!',d:'Save and start planning.',fields:[{k:'result',type:'result'}]},
+];
+let step=0;
+const stepNow=document.getElementById('stepNow'), stepBar=document.getElementById('stepBar'), calcTitle=document.getElementById('calcTitle'), calcDesc=document.getElementById('calcDesc'), calcForm=document.getElementById('calcForm');
+const unitsSel=document.getElementById('units'), backBtn=document.getElementById('calcBack'), nextBtn=document.getElementById('calcNext'), saveBtn=document.getElementById('calcSave');
+unitsSel.addEventListener('change', ()=>{ calcState.units=unitsSel.value; renderCalcStep(); });
+
+function renderCalcStep(){
+  stepNow.textContent=(step+1); stepBar.style.width=(step/(steps.length-1))*100+'%';
+  const s=steps[step]; calcTitle.textContent=s.t; calcDesc.textContent=s.d; calcForm.innerHTML='';
+  s.fields.forEach(f=>{
+    if(f.show && !f.show(calcState)) return;
+    const wrap=document.createElement('div'); let inner='';
+    if(f.type==='number'){ inner=`<label>${f.label}</label><input id="f_${f.k}" type="number" value="${calcState[f.k]??''}">`; }
+    if(f.type==='select'){ inner=`<label>${f.label}</label><select id="f_${f.k}">${(f.opts||[]).map(o=>`<option value="${o[0]}" ${calcState[f.k]===o[0]?'selected':''}>${o[1]}</option>`).join('')}</select>`; }
+    if(f.type==='range'){ inner=`<label>${f.label}</label><input id="f_${f.k}" type="range" min="${f.min}" max="${f.max}" step="${f.step}" value="${calcState[f.k]}">`; }
+    if(f.type==='summary'){ inner=`<div class="grid g2">
+        <div><div class="tag">Age</div><div class="muted">${calcState.age}</div></div>
+        <div><div class="tag">Sex</div><div class="muted">${calcState.sex}</div></div>
+        <div><div class="tag">Height</div><div class="muted">${calcState.height} ${calcState.units==='metric'?'cm':'in'}</div></div>
+        <div><div class="tag">Weight</div><div class="muted">${calcState.weight} ${calcState.units==='metric'?'kg':'lb'}</div></div>
+        <div><div class="tag">Activity</div><div class="muted">${calcState.activity}</div></div>
+        <div><div class="tag">Goal</div><div class="muted">${calcState.goal}${calcState.goal!=='maintain'?' ('+calcState.pace+' /wk)':''}</div></div>
+      </div>`; }
+    if(f.type==='result'){ const r=calcResult(); inner=`<div class="grid g2">
+        <div><div class="tag">Target</div><div style="font-size:24px;font-weight:800;color:#c7cff3">${Math.round(r.target)} kcal</div></div>
+        <div><div class="tag">TDEE</div><div class="muted" style="font-size:20px">${Math.round(r.maintenance)} kcal</div></div>
+        <div><div class="tag">Macros</div><div class="muted" style="font-size:18px">P ${Math.round(r.macros.protein)} • F ${Math.round(r.macros.fat)} • C ${Math.round(r.macros.carbs)}</div></div>
+      </div>`; }
+    wrap.innerHTML=inner; calcForm.appendChild(wrap);
+  });
+  backBtn.style.visibility = step===0? 'hidden':'visible';
+  saveBtn.style.display = step===steps.length-1? 'inline-block':'none';
+  nextBtn.textContent = step===steps.length-1? 'Go to Planner →':'Next →';
+}
+function readCalcInputs(){ const s=steps[step]; s.fields.forEach(f=>{ const el=document.getElementById('f_'+f.k); if(!el) return; if(f.type==='number'||f.type==='range'){calcState[f.k]=Number(el.value);} if(f.type==='select'){calcState[f.k]=el.value;} }); }
+function bmr({sex,weightKg,heightCm,age}){ return sex==='male'? 10*weightKg + 6.25*heightCm - 5*age + 5 : 10*weightKg + 6.25*heightCm - 5*age - 161; }
+function macroSplit(goal,wkg){ const ppkg= goal==='lose'?2.0: goal==='gain'?1.6:1.8; const protein=ppkg*wkg; return cal=>{ const fkcal=cal*0.25; const fat=fkcal/9; const pkcal=protein*4; const carbs=Math.max((cal-pkcal-fkcal)/4,0); return {protein, fat, carbs}; } }
+function calcResult(){ const metric=calcState.units==='metric'; const w= metric? calcState.weight: calcState.weight/2.20462; const h= metric? calcState.height: calcState.height*2.54; const fac={sedentary:1.2,light:1.375,moderate:1.55,very:1.725,extra:1.9}; const base=bmr({sex:calcState.sex,weightKg:w,heightCm:h,age:calcState.age}); const maintenance=base*fac[calcState.activity]; let d=0; if(calcState.goal!=='maintain'){ const paceKg= metric? calcState.pace: calcState.pace/2.20462; d=(paceKg*7700)/7; if(calcState.goal==='lose') d*=-1; } const target=Math.max(maintenance+d,1200); const macros=macroSplit(calcState.goal,w)(target); return {target,maintenance,macros}; }
+backBtn.onclick=()=>{ readCalcInputs(); step=Math.max(0,step-1); renderCalcStep(); };
+nextBtn.onclick=()=>{ readCalcInputs(); if(step<steps.length-1){ step++; renderCalcStep(); } else { document.querySelector('[data-tab=\"planner\"]').click(); } };
+saveBtn.onclick=()=>{ const r=calcResult(); storage.set('target', JSON.stringify({kcal:Math.round(r.target),protein:Math.round(r.macros.protein),fat:Math.round(r.macros.fat),carbs:Math.round(r.macros.carbs)})); alert('Saved ✓'); };
+renderCalcStep();
+
+// ---- Planner
+const MEAL_KEYS=['breakfast','lunch','dinner','snacks'];
+function emptyWeek(){ return Array.from({length:7}).map(()=> ({breakfast:[],lunch:[],dinner:[],snacks:[]})); }
+function loadWeek(){ try{ return JSON.parse(storage.get('week_plan')||'null')||emptyWeek(); }catch{return emptyWeek();} }
+function saveWeek(w){ storage.set('week_plan', JSON.stringify(w)); }
+let WEEK=loadWeek();
+function totalsDay(day){ let k=0,p=0,f=0,c=0; for(const mk of MEAL_KEYS){ for(const it of day[mk]){ k+=it.kcal; p+=it.p; f+=it.f; c+=it.c; } } return {k:round(k),p:round(p),f:round(f),c:round(c)}; }
+function renderRingProgress(elId, consumed, target){ const el=document.getElementById(elId); el.innerHTML=''; const r=70,c=2*Math.PI*r; const dash=Math.min(1,consumed/target)*c; const svg=document.createElementNS('http://www.w3.org/2000/svg','svg'); svg.setAttribute('width','160'); svg.setAttribute('height','160'); svg.innerHTML=`<circle cx="80" cy="80" r="${r}" fill="none" stroke="#1a2146" stroke-width="14"/><circle cx="80" cy="80" r="${r}" fill="none" stroke="${consumed>target*1.05?'#f97316':'#22c55e'}" stroke-width="14" stroke-linecap="round" stroke-dasharray="${dash} ${c-dash}" transform="rotate(-90 80 80)"/>`; const pct=Math.min(150, Math.round((consumed/target)*100)); const txt=document.createElement('div'); txt.className='ringTxt'; txt.innerHTML=`<div>Consumed</div><strong>${Math.round(consumed)} kcal</strong><div>${pct}% of target</div>`; el.appendChild(svg); el.appendChild(txt); }
+const selDay=document.getElementById('selDay'); const dayMeta=document.getElementById('dayMeta');
+
+function mealHeader(title){ return `<div class="tag" style="margin:18px 0 8px">${title}</div>`; } /* bigger spacing above & below */
+
+function mealSection(dayIndex, mealKey){
+  const sec=document.createElement('div'); sec.className='sect';
+  sec.innerHTML = mealHeader({breakfast:"Breakfast",lunch:"Lunch",dinner:"Dinner",snacks:"Snacks"}[mealKey]);
+  const tbl=document.createElement('table');
+  const thead=`<tr><th>Name</th><th>grams</th><th>kcal</th><th>P</th><th>F</th><th>C</th><th>Actions</th></tr>`;
+  const items=WEEK[dayIndex][mealKey]; let rows=''; let sums={k:0,p:0,f:0,c:0};
+  items.forEach((it,idx)=>{ sums.k+=it.kcal; sums.p+=it.p; sums.f+=it.f; sums.c+=it.c;
+    rows+=`<tr><td>${it.name}</td><td>${it.g} g</td><td>${round(it.kcal)}</td><td>${round(it.p)}</td><td>${round(it.f)}</td><td>${round(it.c)}</td><td><button class="btn" data-rm="${idx}" data-meal="${mealKey}" data-day="${dayIndex}">Remove</button></td></tr>`;
+  });
+  rows+=`<tr><th>Totals</th><th></th><th>${round(sums.k)}</th><th>${round(sums.p)}</th><th>${round(sums.f)}</th><th>${round(sums.c)}</th><th></th></tr>`;
+  tbl.innerHTML=thead+rows; sec.appendChild(tbl);
+
+  // add input row (spaced further from table)
+  const addRow=document.createElement('div'); addRow.className='grid g2'; addRow.style.marginTop='14px';
+  const combo=createCombo({placeholder:'Type food name…', onPick:(f)=>{ selected=f; combo.input.value=f.name; }});
+  const grams=document.createElement('input'); grams.type='number'; grams.min='1'; grams.value='100';
+  const addBtn=document.createElement('button'); addBtn.className='btn primary'; addBtn.style.marginTop='10px'; addBtn.textContent='Add';
+  addRow.appendChild(combo.wrap); addRow.appendChild(grams); sec.appendChild(addRow); sec.appendChild(addBtn);
+  let selected=null;
+  addBtn.addEventListener('click', ()=>{ const g=Number(grams.value||0); if(!selected || g<=0) return; const s=g/100; WEEK[dayIndex][mealKey].push({name:selected.name,g,kcal:selected.kcal*s,p:selected.p*s,f:selected.f*s,c:selected.c*s}); saveWeek(WEEK); renderPlanner(); });
+  setTimeout(()=> sec.querySelectorAll('[data-rm]').forEach(b=> b.addEventListener('click', (e)=>{ const ix=+e.currentTarget.getAttribute('data-rm'); const d=+e.currentTarget.getAttribute('data-day'); const mk=e.currentTarget.getAttribute('data-meal'); WEEK[d][mk].splice(ix,1); saveWeek(WEEK); renderPlanner(); })),0);
+  return sec;
+}
+
+function renderPlanner(){
+  const T=JSON.parse(storage.get('target')||'{"kcal":2000,"protein":120,"fat":60,"carbs":220}');
+  document.getElementById('targetTxt2').textContent=`Target: ${T.kcal} kcal · P${T.protein} / F${T.fat} / C${T.carbs}`;
+  const i=Number(selDay.value);
+  const names=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  const totals=totalsDay(WEEK[i]);
+  dayMeta.textContent = `${names[i]} · Totals: ${totals.k} kcal · P${totals.p} / F${totals.f} / C${totals.c}`;
+  renderRingProgress('ringDay', totals.k, T.kcal);
+  const body=document.getElementById('plannerBody'); body.innerHTML=''; ['breakfast','lunch','dinner','snacks'].forEach(mk=> body.appendChild(mealSection(i,mk)));
+}
+selDay.addEventListener('change', renderPlanner);
+
+// log to calendar uses only the explicit date picker
+document.getElementById('logDate').value = new Date().toISOString().slice(0,10);
+document.getElementById('logDay').addEventListener('click', ()=>{
+  const idx=Number(selDay.value);
+  const totals=totalsDay(WEEK[idx]);
+  const date=document.getElementById('logDate').value;
+  const hist=JSON.parse(storage.get('history')||'{}');
+  hist[date]={kcal:totals.k, target: JSON.parse(storage.get('target')||'{"kcal":2000}').kcal};
+  storage.set('history', JSON.stringify(hist));
+  alert('Logged ✓');
+  renderCalendar();
+});
+
+// ---- Combobox search
+function norm(s){ return s.toLowerCase().replace(/[^a-z0-9á-ž\s]/g,"").trim(); }
+function score(q,name){ const n=norm(name), m=norm(q); if(!m) return 0; if(n.startsWith(m)) return 100-(n.length-m.length); if(n.includes(m)) return 80-n.indexOf(m); const ts=new Set(n.split(/\s+/)), ms=new Set(m.split(/\s+/)); let inter=0; ms.forEach(t=> ts.has(t)&&inter++); return inter?60+inter*5:0; }
+function dbSearch(q,limit=50){ const arr=[
+  ["Chicken breast (raw)",120,22,2,0],["Chicken breast (cooked)",165,31,3.6,0],["Turkey breast",135,29,1,0],
+  ["Rice cooked",130,2.4,0.3,28],["Egg whole",143,13,10,1.1],["Oats",389,16.9,6.9,66],["Banana",89,1.1,0.3,23],["Olive oil",884,0,100,0]
+].map(([name,k,p,f,c])=>({name,kcal:k,p,f,c}));
+  return arr.map(it=>({...it,_s:score(q,it.name)})).filter(x=>x._s>0).sort((a,b)=>b._s-a._s).slice(0,limit);
+}
+function createCombo({placeholder="Type...", onPick}){
+  const wrap=document.createElement('div'); wrap.className='combo';
+  const inp=document.createElement('input'); inp.type='text'; inp.placeholder=placeholder; inp.autocomplete='off';
+  const list=document.createElement('div'); list.className='list'; list.style.display='none';
+  wrap.appendChild(inp); wrap.appendChild(list);
+  let items=[], active=-1;
+  function hilite(text,query){ const q=norm(query); if(!q) return text; const i=norm(text).indexOf(q); if(i<0) return text; const a=text.slice(0,i), b=text.slice(i,i+q.length), c=text.slice(i+q.length); return a+'<span class="hl">'+b+'</span>'+c; }
+  function render(){ list.innerHTML=''; items.forEach((it,idx)=>{ const el=document.createElement('div'); el.className='item'+(idx===active?' active':''); el.innerHTML=`<span>${hilite(it.name, inp.value)}</span><small>${it.kcal} kcal/100g · P${it.p} F${it.f} C${it.c}</small>`; el.addEventListener('mousedown',e=>{e.preventDefault(); onPick(it); list.style.display='none';}); list.appendChild(el); }); list.style.display=items.length?'block':'none'; }
+  function search(){ items=dbSearch(inp.value); active=0; render(); }
+  inp.addEventListener('input', search); inp.addEventListener('focus', search);
+  inp.addEventListener('keydown', e=>{ if(list.style.display!=='block') return; if(e.key==='ArrowDown'){active=Math.min(active+1,items.length-1);render();e.preventDefault();} if(e.key==='ArrowUp'){active=Math.max(active-1,0);render();e.preventDefault();} if(e.key==='Enter'){ if(items[active]){ onPick(items[active]); list.style.display='none'; } } if(e.key==='Escape'){ list.style.display='none'; } });
+  document.addEventListener('click', e=>{ if(!wrap.contains(e.target)) list.style.display='none'; });
+  return {wrap, input:inp, open:()=>search()};
+}
+
+// ---- Calendar
+let cur=new Date(); cur.setDate(1);
+const monthLabel=document.getElementById('monthLabel'); const calGrid=document.getElementById('calGrid'); const monthSummary=document.getElementById('monthSummary');
+function monthName(y,m){ return new Date(y,m,1).toLocaleString(undefined,{month:'long', year:'numeric'}); }
+function renderCalendar(){
+  const y=cur.getFullYear(), m=cur.getMonth(); monthLabel.textContent=monthName(y,m); calGrid.innerHTML='';
+  const first=new Date(y,m,1).getDay(); const startOffset=(first+6)%7; const days=new Date(y,m+1,0).getDate(); const hist=JSON.parse(storage.get('history')||'{}');
+  let within=0, under=0, over=0, totalLogged=0;
+  for(let i=0;i<startOffset;i++){ const cell=document.createElement('div'); cell.className='card'; cell.style.visibility='hidden'; calGrid.appendChild(cell); }
+  for(let d=1; d<=days; d++){
+    const iso=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const cell=document.createElement('div'); cell.className='card'; cell.style.minHeight='90px';
+    const data=hist[iso]; let tag='No data', color='#9aa3b2', bg='#0f1430';
+    if(data){ totalLogged++; const kc=data.kcal, t=data.target, tol=t*0.05; if(kc < t - tol){ tag='Under'; bg='#052e2b'; color='#99f6e4'; under++; } else if(kc > t + tol){ tag='Over'; bg='#3b0a0a'; color:'#fecaca'; over++; } else { tag='Within'; bg='#052e16'; color:'#86efac'; within++; } cell.style.background=bg; cell.style.borderColor='transparent'; }
+    cell.innerHTML = `<div class="row" style="justify-content:space-between"><div class="muted">${d}</div><div class="tag" style="background:${bg}; color:${color}; border-color:rgba(255,255,255,.12)">${tag}</div></div><div style="font-weight:800;font-size:18px;margin-top:6px">${data? Math.round(data.kcal)+' kcal':'—'}</div>`;
+    calGrid.appendChild(cell);
+  }
+  monthSummary.textContent = `${within} within · ${under} under · ${over} over · ${totalLogged} logged`;
+}
+document.getElementById('prevMonth').addEventListener('click', ()=>{ cur.setMonth(cur.getMonth()-1); renderCalendar(); });
+document.getElementById('nextMonth').addEventListener('click', ()=>{ cur.setMonth(cur.getMonth()+1); renderCalendar(); });
+renderCalendar();
+
+// ---- Library (table only, unchanged)
+const DEFAULT_LIB=[
+  {id:'chicken',name:'Chicken breast (raw)',kcal:120,p:22,f:2,c:0},
+  {id:'rice',name:'Rice cooked',kcal:130,p:2.4,f:0.3,c:28},
+  {id:'egg',name:'Egg whole',kcal:143,p:13,f:10,c:1.1},
+  {id:'oats',name:'Oats',kcal:389,p:16.9,f:6.9,c:66},
+  {id:'banana',name:'Banana',kcal:89,p:1.1,f:0.3,c:23}
+];
+function loadLib(){ try{ return JSON.parse(storage.get('food_lib')||'null')||DEFAULT_LIB; }catch{return DEFAULT_LIB;} }
+let LIB=loadLib();
+function renderLibrary(){ const head=`<tr><th>Name</th><th>kcal</th><th>P</th><th>F</th><th>C</th><th>per 100g</th></tr>`; let rows=''; LIB.forEach(f=> rows+=`<tr><td>${f.name}</td><td>${f.kcal}</td><td>${f.p}</td><td>${f.f}</td><td>${f.c}</td><td>100 g</td></tr>`); document.getElementById('libTableWrap').innerHTML=`<table><thead>${head}</thead><tbody>${rows}</tbody></table>`; }
+renderLibrary();
+
+// ---- Tabs
+const tabs={calculator:document.getElementById('tab-calculator'), planner:document.getElementById('tab-planner'), calendar:document.getElementById('tab-calendar'), library:document.getElementById('tab-library')};
+document.querySelectorAll('.tab').forEach(b=> b.addEventListener('click', ()=>{
+  document.querySelectorAll('.tab').forEach(x=> x.classList.remove('active')); b.classList.add('active');
+  Object.values(tabs).forEach(v=> v.style.display='none'); tabs[b.dataset.tab].style.display='block';
+  if(b.dataset.tab==='planner') renderPlanner(); if(b.dataset.tab==='calendar') renderCalendar();
+}));
+// initial render
+renderPlanner();
+</script>
+</body>
+</html>
