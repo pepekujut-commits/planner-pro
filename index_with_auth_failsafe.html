@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Planner Pro — Auth (failsafe)</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net"/>
+<style>
+  :root{--bg:#0b0f1d;--panel:#0f1430;--card:#111736;--line:#202752;--fg:#e9ecff;--muted:#a0a8c7;--accent:#8b5cf6;--good:#22c55e;--bad:#ef4444;}
+  *{box-sizing:border-box} body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:#0b0f1d;color:var(--fg)}
+  .wrap{max-width:1200px;margin:26px auto;padding:0 16px}
+  .topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}
+  .brand{display:flex;align-items:center;gap:10px}
+  .logo{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--accent),#4f46e5)}
+  .nav{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  .tab{padding:10px 14px;border:1px solid var(--line);border-radius:999px;background:#10162f;cursor:pointer}
+  .tab.active{border-color:transparent;background:linear-gradient(90deg,var(--accent),#4f46e5)}
+  .btn{cursor:pointer;border:1px solid #1a2044;background:#12183a;color:#fff;border-radius:12px;padding:11px 16px;font-weight:700}
+  .btn.primary{background:linear-gradient(90deg,#8b5cf6,#4f46e5);border-color:transparent}
+  .btn.success{background:linear-gradient(90deg,#22c55e,#84cc16);border-color:transparent;color:#052e16}
+  .btn.big{padding:14px 22px;font-size:16px}
+  .muted{color:var(--muted)}
+  .card{background:linear-gradient(180deg,#111736,#0f1430);border:1px solid #1a2350;border-radius:18px;box-shadow:0 18px 44px rgba(0,0,0,.35);padding:24px}
+  label{font-size:14px;color:#c7cff3;display:block;margin-bottom:6px}
+  input,select{width:100%; padding:12px 13px; border-radius:12px; border:1px solid #1a2044; background:#0c1026; color:#fff; font-size:15px; outline:none}
+  .grid{display:grid; gap:14px} .g2{grid-template-columns:1fr 1fr}
+  .row{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+  .progress{height:8px;border-radius:999px;background:#0d1230;overflow:hidden;border:1px solid #1a2146}
+  .progress > div{height:100%; width:0; background:linear-gradient(90deg,#8b5cf6,#22c55e)}
+  .titlebar{font-size:14px; color:#c7cff3}
+  .note{font-size:12px;color:#8ea2e1}
+  /* modal */
+  .modal{position:fixed;inset:0;display:none;place-items:center;background:rgba(0,0,0,.5);backdrop-filter:blur(2px);z-index:50}
+  .modal .box{width:min(560px,90vw); background:linear-gradient(180deg,#12183a,#0f1430);border:1px solid #1a2146;border-radius:16px;padding:18px}
+  .field{margin:10px 0}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand"><div class="logo"></div><div><strong>Planner Pro</strong><div class="muted" style="font-size:12px">Calculator + Planner + Calendar</div></div></div>
+    <div class="nav">
+      <div class="tab active" data-tab="calculator">Calculator</div>
+      <div class="tab" data-tab="planner">Weekly Plan</div>
+      <div class="tab" data-tab="calendar">Calendar</div>
+      <button id="btnLogin" class="btn">Login</button>
+      <button id="btnLogout" class="btn" style="display:none">Logout</button>
+    </div>
+  </div>
+
+  <div id="tab-calculator">
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div class="titlebar">Step <span id="stepNow">1</span> of 6</div>
+        <div class="progress" style="width:60%"><div id="stepBar"></div></div>
+      </div>
+      <h1 id="calcTitle">How old are you?</h1>
+      <div class="muted" id="calcDesc">We tailor recommendations to your life stage.</div>
+      <div id="calcForm" class="grid g2" style="margin-top:16px"></div>
+      <div class="row" style="justify-content:space-between; margin-top:18px">
+        <button id="calcBack" class="btn">← Back</button>
+        <div class="row">
+          <button id="calcNext" class="btn primary">Next →</button>
+          <button id="calcSave" class="btn success big" style="display:none">Save target & continue →</button>
+        </div>
+      </div>
+      <div class="note">* After saving your target, you'll be asked to sign in. Then you'll land on your Dashboard.</div>
+    </div>
+  </div>
+
+  <div id="tab-planner" style="display:none"><div class="card"><h2>Weekly Plan</h2><div class="muted">Planner stays as before. This build focuses on reliable Auth.</div></div></div>
+  <div id="tab-calendar" style="display:none"><div class="card"><h2>Calendar</h2></div></div>
+</div>
+
+<!-- Auth Modal -->
+<div id="authModal" class="modal">
+  <div class="box">
+    <h2>Sign in to save your plan</h2>
+    <div class="muted">Use email (magic link) or Google. You'll go to Dashboard after sign-in.</div>
+    <div class="field">
+      <label>Email</label>
+      <input id="authEmail" type="email" placeholder="you@example.com"/>
+    </div>
+    <div class="row" style="justify-content:flex-end">
+      <button id="sendMagic" class="btn primary">Send magic link</button>
+      <button id="googleBtn" class="btn success">Continue with Google</button>
+      <button id="closeAuth" class="btn">Cancel</button>
+    </div>
+    <div id="authMsg" class="note" style="margin-top:10px"></div>
+  </div>
+</div>
+
+<!-- Config Modal (auto-opens if not configured) -->
+<div id="cfgModal" class="modal">
+  <div class="box">
+    <h2>Connect to Supabase</h2>
+    <div class="muted">Paste your <b>Project URL</b> and <b>Anon public key</b> from Supabase → Settings → API.</div>
+    <div class="field"><label>Supabase URL</label><input id="cfgUrl" placeholder="https://xxxx.supabase.co"></div>
+    <div class="field"><label>Anon public key</label><input id="cfgKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6…"></div>
+    <div class="row" style="justify-content:flex-end"><button id="saveCfg" class="btn success">Save</button></div>
+  </div>
+</div>
+
+<script>
+// Tabs
+document.querySelectorAll('.tab').forEach(b=> b.addEventListener('click', ()=>{
+  document.querySelectorAll('.tab').forEach(x=> x.classList.remove('active')); b.classList.add('active');
+  document.querySelectorAll('[id^="tab-"]').forEach(s=> s.style.display='none');
+  document.getElementById('tab-'+b.dataset.tab).style.display='block';
+}));
+
+// Calculator (short)
+const calcState={age:25,sex:'male',height:175,weight:70,activity:'light',goal:'lose',pace:0.5};
+const steps=[
+  {t:'How old are you?',d:'We tailor recommendations to your life stage.',fields:[{k:'age',label:'Age',type:'number'},{k:'sex',label:'Sex',type:'select',opts:[['male','Male'],['female','Female']]}]},
+  {t:'Your height & weight',d:'',fields:[{k:'height',label:'Height (cm)',type:'number'},{k:'weight',label:'Weight (kg)',type:'number'}]},
+  {t:'Activity level',d:'',fields:[{k:'activity',label:'Activity',type:'select',opts:[['sedentary','Sedentary'],['light','Lightly active'],['moderate','Moderately active'],['very','Very active'],['extra','Extra active']]}]},
+  {t:'Your goal',d:'',fields:[{k:'goal',label:'Goal',type:'select',opts:[['lose','Lose weight'],['maintain','Maintain'],['gain','Gain muscle']]},{k:'pace',label:'Pace (kg/week)',type:'range',min:0.1,max:1,step:0.05,show:s=>s.goal!=='maintain'}]},
+  {t:'Review',d:'',fields:[{k:'summary',type:'summary'}]},
+  {t:'Done!',d:'Save and continue to login.',fields:[{k:'result',type:'result'}]},
+];
+let step=0;
+const stepNow=document.getElementById('stepNow'), stepBar=document.getElementById('stepBar'), calcTitle=document.getElementById('calcTitle'), calcDesc=document.getElementById('calcDesc'), calcForm=document.getElementById('calcForm');
+const backBtn=document.getElementById('calcBack'), nextBtn=document.getElementById('calcNext'), saveBtn=document.getElementById('calcSave');
+function renderStep(){ stepNow.textContent=(step+1); stepBar.style.width=(step/(steps.length-1))*100+'%'; const s=steps[step]; calcTitle.textContent=s.t; calcDesc.textContent=s.d||''; calcForm.innerHTML=''; s.fields.forEach(f=>{ if(f.show && !f.show(calcState)) return; const wrap=document.createElement('div'); let inner=''; if(f.type==='number'){ inner=`<label>${f.label}</label><input id="f_${f.k}" type="number" value="${calcState[f.k]??''}">`; } if(f.type==='select'){ inner=`<label>${f.label}</label><select id="f_${f.k}">${(f.opts||[]).map(o=>`<option value="${o[0]}" ${calcState[f.k]===o[0]?'selected':''}>${o[1]}</option>`).join('')}</select>`; } if(f.type==='range'){ inner=`<label>${f.label}</label><input id="f_${f.k}" type="range" min="${f.min}" max="${f.max}" step="${f.step}" value="${calcState[f.k]}">`; } if(f.type==='summary'){ inner=`<div class="grid g2"><div><div class="muted">Age</div>${calcState.age}</div><div><div class="muted">Sex</div>${calcState.sex}</div><div><div class="muted">Height</div>${calcState.height} cm</div><div><div class="muted">Weight</div>${calcState.weight} kg</div></div>`; } if(f.type==='result'){ const r=calcResult(); inner=`<div class="grid g2"><div><div class="muted">Target</div><div style="font-size:24px;font-weight:800">${Math.round(r.target)} kcal</div></div><div><div class="muted">TDEE</div>${Math.round(r.maintenance)} kcal</div><div><div class="muted">Macros</div>P ${Math.round(r.macros.protein)} • F ${Math.round(r.macros.fat)} • C ${Math.round(r.macros.carbs)}</div></div>`; } wrap.innerHTML=inner; calcForm.appendChild(wrap); }); backBtn.style.visibility= step===0? 'hidden':'visible'; saveBtn.style.display= step===steps.length-1? 'inline-block':'none'; nextBtn.style.display= step===steps.length-1? 'none':'inline-block'; }
+function readInputs(){ const s=steps[step]; s.fields.forEach(f=>{ const el=document.getElementById('f_'+f.k); if(!el) return; if(f.type==='number'||f.type==='range'){calcState[f.k]=Number(el.value);} if(f.type==='select'){calcState[f.k]=el.value;} }); }
+function bmr({sex,weightKg,heightCm,age}){ return sex==='male'? 10*weightKg + 6.25*heightCm - 5*age + 5 : 10*weightKg + 6.25*heightCm - 5*age - 161; }
+function macroSplit(goal,wkg){ const ppkg= goal==='lose'?2.0: goal==='gain'?1.6:1.8; const protein=ppkg*wkg; return cal=>{ const fkcal=cal*0.25; const fat=fkcal/9; const pkcal=protein*4; const carbs=Math.max((cal-pkcal-fkcal)/4,0); return {protein, fat, carbs}; } }
+function calcResult(){ const w= calcState.weight; const h= calcState.height; const fac={sedentary:1.2,light:1.375,moderate:1.55,very:1.725,extra:1.9}; const base=bmr({sex:calcState.sex,weightKg:w,heightCm:h,age:calcState.age}); const maintenance=base*fac[calcState.activity]; let d=0; if(calcState.goal!=='maintain'){ d=(calcState.pace*7700)/7; if(calcState.goal==='lose') d*=-1; } const target=Math.max(maintenance+d,1200); const macros=macroSplit(calcState.goal,w)(target); return {target,maintenance,macros}; }
+backBtn.onclick=()=>{ readInputs(); step=Math.max(0,step-1); renderStep(); };
+nextBtn.onclick=()=>{ readInputs(); step++; renderStep(); };
+saveBtn.onclick=()=>{ const r=calcResult(); localStorage.setItem('target', JSON.stringify({kcal:Math.round(r.target),protein:Math.round(r.macros.protein),fat:Math.round(r.macros.fat),carbs:Math.round(r.macros.carbs)})); openAuth(); };
+renderStep();
+
+// --- Supabase auth (failsafe)
+let supa=null;
+function configured(){ return !!(localStorage.getItem('supabase_url') && localStorage.getItem('supabase_anon')); }
+function initSupabase(){ const url=localStorage.getItem('supabase_url'); const key=localStorage.getItem('supabase_anon'); if(!url||!key){ document.getElementById('cfgModal').style.display='grid'; return; } supa = window.supabase.createClient(url, key); supa.auth.onAuthStateChange(async (e) => { const { data: { user } } = await supa.auth.getUser(); refreshAuthUI(!!user, user); if(user){ document.querySelector('[data-tab=\"planner\"]').click(); } }); }
+document.getElementById('saveCfg').onclick=()=>{ localStorage.setItem('supabase_url', document.getElementById('cfgUrl').value.trim()); localStorage.setItem('supabase_anon', document.getElementById('cfgKey').value.trim()); document.getElementById('cfgModal').style.display='none'; initSupabase(); };
+// Auto-open config on first load if not set
+window.addEventListener('load', ()=>{ if(!configured()) document.getElementById('cfgModal').style.display='grid'; else initSupabase(); });
+function refreshAuthUI(logged, user){ document.getElementById('btnLogin').style.display = logged? 'none':'inline-block'; document.getElementById('btnLogout').style.display = logged? 'inline-block':'none'; if(logged){ document.getElementById('btnLogout').textContent='Logout ('+(user?.email||'')+')'; } }
+function openAuth(){ if(!supa){ initSupabase(); return; } document.getElementById('authModal').style.display='grid'; }
+document.getElementById('btnLogin').onclick=openAuth;
+document.getElementById('closeAuth').onclick=()=> document.getElementById('authModal').style.display='none';
+document.getElementById('btnLogout').onclick= async ()=>{ if(!supa) return; await supa.auth.signOut(); alert('Signed out'); };
+document.getElementById('sendMagic').onclick= async ()=>{ const email=document.getElementById('authEmail').value.trim(); if(!email) return; const url = location.origin + '/#auth'; const { error } = await supa.auth.signInWithOtp({ email, options:{ emailRedirectTo: url } }); document.getElementById('authMsg').textContent = error? ('Error: '+error.message) : 'Magic link sent. Check your inbox.'; };
+document.getElementById('googleBtn').onclick= async ()=>{ const url = location.origin + '/#auth'; const { error } = await supa.auth.signInWithOAuth({ provider:'google', options:{ redirectTo: url } }); if(error){ document.getElementById('authMsg').textContent='Error: '+error.message; } };
+if(location.hash==='#auth'){ setTimeout(()=> document.getElementById('authModal').style.display='none', 1500); }
+</script>
+</body>
+</html>
